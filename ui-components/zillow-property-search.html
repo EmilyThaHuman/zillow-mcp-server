@@ -9,163 +9,266 @@
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       margin: 0; 
-      padding: 16px; 
+      padding: 0; 
       background: #f5f5f7;
+      height: 100vh;
+      overflow: hidden;
     }
+    
+    .main-container {
+      display: flex;
+      height: 100vh;
+      position: relative;
+    }
+    
+    .sidebar {
+      width: 450px;
+      height: 100%;
+      overflow-y: auto;
+      background: #ffffff;
+      border-right: 1px solid #e0e0e0;
+      padding: 16px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .map-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background: #e5e3df;
+    }
+    
+    #search-map {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
     .header {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 5;
+      padding-bottom: 12px;
     }
+    
     .search-title {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
       color: #1a1a1a;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
+    
     .search-subtitle {
-      font-size: 16px;
+      font-size: 14px;
       color: #666;
     }
+    
     .filters-applied {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 12px;
     }
+    
     .filter-tag {
-      padding: 6px 12px;
+      padding: 4px 10px;
       background: #e3f2fd;
       color: #1976d2;
-      border-radius: 16px;
-      font-size: 13px;
+      border-radius: 12px;
+      font-size: 12px;
       font-weight: 500;
     }
-    .properties-container { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-      gap: 20px;
+    
+    .properties-list { 
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
+    
     .property-card { 
-      background: white; 
-      border-radius: 16px; 
+      background: transparent; 
+      border-radius: 24px; 
       overflow: hidden; 
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
-      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+      transition: all 0.2s ease;
       cursor: pointer;
       border: 2px solid transparent;
     }
+    
     .property-card:hover { 
-      transform: translateY(-4px); 
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
       border-color: #0066cc;
     }
+    
+    .property-card.highlighted {
+      border-color: #0066cc;
+      background: #f0f7ff;
+    }
+    
     .property-image-container {
       position: relative;
       width: 100%;
-      height: 220px;
+      height: 180px;
       overflow: hidden;
       background: #e0e0e0;
     }
+    
     .property-image { 
       width: 100%; 
       height: 100%;
       object-fit: cover;
       transition: transform 0.3s ease;
     }
+    
     .property-card:hover .property-image {
       transform: scale(1.05);
     }
+    
     .listing-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      padding: 6px 12px;
+      top: 10px;
+      right: 10px;
+      padding: 4px 10px;
       background: rgba(0, 0, 0, 0.8);
       color: white;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    
     .listing-badge.for-sale {
       background: #4caf50;
     }
+    
     .listing-badge.for-rent {
       background: #ff9800;
     }
+    
     .property-info { 
-      padding: 20px;
+      padding: 16px;
     }
+    
     .property-price { 
-      font-size: 28px; 
+      font-size: 22px; 
       font-weight: 800; 
       color: #0066cc;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
+    
     .property-address { 
-      font-size: 15px; 
+      font-size: 14px; 
       color: #666; 
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       line-height: 1.4;
     }
+    
     .property-details { 
       display: flex; 
-      gap: 16px; 
-      padding-top: 16px;
+      gap: 12px; 
+      padding-top: 12px;
       border-top: 1px solid #f0f0f0;
     }
+    
     .detail { 
       display: flex; 
-      flex-direction: column;
       align-items: center;
+      gap: 4px;
       flex: 1;
     }
+    
     .detail-icon {
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-    .detail-value { 
-      font-weight: 700;
       font-size: 16px;
+    }
+    
+    .detail-value { 
+      font-weight: 600;
+      font-size: 14px;
       color: #1a1a1a;
     }
+    
     .detail-label {
       font-size: 11px;
       color: #999;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 2px;
+      margin-left: 2px;
     }
+    
     .property-type {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 3px 8px;
       background: #f0f0f0;
       color: #666;
-      border-radius: 4px;
-      font-size: 12px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: capitalize;
-      margin-top: 12px;
+      margin-top: 10px;
     }
+    
+    .zestimate {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    
+    .zestimate-value {
+      font-weight: 600;
+      color: #1976d2;
+    }
+    
     .empty-state {
       text-align: center;
       padding: 60px 20px;
       color: #999;
     }
+    
     .empty-state-icon {
       font-size: 64px;
       margin-bottom: 16px;
       opacity: 0.5;
     }
+    
     .empty-state-text {
       font-size: 18px;
       font-weight: 600;
       margin-bottom: 8px;
     }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: 50%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .map-container {
+        height: 50%;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="main-container">
+    <div class="sidebar">
+      <div id="root"></div>
+    </div>
+    <div class="map-container">
+      <div id="search-map"></div>
+    </div>
+  </div>
+  
   <script>
     (function() {
       const props = window.__WIDGET_PROPS__ || {};
@@ -178,6 +281,9 @@
       } = props;
       
       const root = document.getElementById('root');
+      let map = null;
+      let markers = [];
+      let selectedPropertyIndex = -1;
       
       // Header
       const header = document.createElement('div');
@@ -211,27 +317,69 @@
       header.innerHTML = headerHTML;
       root.appendChild(header);
       
-      // Properties grid
+      // Properties list
       const container = document.createElement('div');
-      container.className = 'properties-container';
+      container.className = 'properties-list';
       
       if (properties.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><div class="empty-state-text">No properties found</div><div>Try adjusting your search filters or exploring a different area.</div></div>';
       } else {
-        properties.forEach(property => {
+        properties.forEach((property, index) => {
           const card = document.createElement('div');
           card.className = 'property-card';
+          card.dataset.index = index;
           
           const badgeClass = property.listingType === 'for-rent' ? 'for-rent' : 'for-sale';
           const badgeText = property.listingType === 'for-rent' ? 'For Rent' : 'For Sale';
           
-          card.innerHTML = '<div class="property-image-container"><img src="' + (property.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image') + '" alt="' + property.address + '" class="property-image" onerror="this.src=\'https://via.placeholder.com/400x300?text=No+Image\'"><div class="listing-badge ' + badgeClass + '">' + badgeText + '</div></div><div class="property-info"><div class="property-price">$' + property.price.toLocaleString() + '</div><div class="property-address">' + property.address + '</div><div class="property-details"><div class="detail"><div class="detail-icon">🛏️</div><div class="detail-value">' + property.bedrooms + '</div><div class="detail-label">Beds</div></div><div class="detail"><div class="detail-icon">🚿</div><div class="detail-value">' + property.bathrooms + '</div><div class="detail-label">Baths</div></div><div class="detail"><div class="detail-icon">📐</div><div class="detail-value">' + property.sqft.toLocaleString() + '</div><div class="detail-label">Sq Ft</div></div></div><div class="property-type">' + (property.propertyType || 'house') + '</div></div>';
+          let cardHTML = '<div class="property-image-container">';
+          cardHTML += '<img src="' + (property.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image') + '" alt="' + property.address + '" class="property-image" onerror="this.src=\'https://via.placeholder.com/400x300?text=No+Image\'">';
+          cardHTML += '<div class="listing-badge ' + badgeClass + '">' + badgeText + '</div>';
+          cardHTML += '</div>';
+          cardHTML += '<div class="property-info">';
+          cardHTML += '<div class="property-price">$' + property.price.toLocaleString() + '</div>';
+          cardHTML += '<div class="property-address">' + property.address + '</div>';
+          cardHTML += '<div class="property-details">';
+          cardHTML += '<div class="detail"><span class="detail-icon">🛏️</span><span class="detail-value">' + property.bedrooms + '</span><span class="detail-label">bd</span></div>';
+          cardHTML += '<div class="detail"><span class="detail-icon">🚿</span><span class="detail-value">' + property.bathrooms + '</span><span class="detail-label">ba</span></div>';
+          cardHTML += '<div class="detail"><span class="detail-icon">📐</span><span class="detail-value">' + property.sqft.toLocaleString() + '</span><span class="detail-label">sqft</span></div>';
+          cardHTML += '</div>';
+          if (property.propertyType) {
+            cardHTML += '<div class="property-type">' + property.propertyType + '</div>';
+          }
+          if (property.zestimate) {
+            cardHTML += '<div class="zestimate">Zestimate®: <span class="zestimate-value">$' + property.zestimate.toLocaleString() + '</span></div>';
+          }
+          cardHTML += '</div>';
+          
+          card.innerHTML = cardHTML;
           
           card.addEventListener('click', () => {
+            // Remove highlight from all cards
+            document.querySelectorAll('.property-card').forEach(c => c.classList.remove('highlighted'));
+            // Add highlight to clicked card
+            card.classList.add('highlighted');
+            selectedPropertyIndex = index;
+            
+            // Center map on this property
+            if (map && property.latitude && property.longitude) {
+              map.setCenter({ lat: property.latitude, lng: property.longitude });
+              map.setZoom(16);
+              
+              // Bounce the marker
+              if (markers[index]) {
+                markers[index].setAnimation(google.maps.Animation.BOUNCE);
+                setTimeout(() => {
+                  markers[index].setAnimation(null);
+                }, 750);
+              }
+            }
+            
+            // Post message to parent
             if (window.parent && window.parent.postMessage) {
               window.parent.postMessage({
                 type: 'property-selected',
-                data: { propertyId: property.id, address: property.address }
+                data: { propertyId: property.id, address: property.address, property: property }
               }, '*');
             }
           });
@@ -241,6 +389,144 @@
       }
       
       root.appendChild(container);
+      
+      // Initialize Google Maps
+      function initMap() {
+        const mapElement = document.getElementById('search-map');
+        
+        if (!mapElement || properties.length === 0) {
+          return;
+        }
+        
+        // Calculate center point from properties with coordinates
+        const propertiesWithCoords = properties.filter(p => p.latitude && p.longitude);
+        
+        let center = { lat: 37.7749, lng: -122.4194 }; // Default to SF
+        let zoom = 12;
+        
+        if (propertiesWithCoords.length > 0) {
+          // Use first property's coordinates
+          center = {
+            lat: propertiesWithCoords[0].latitude,
+            lng: propertiesWithCoords[0].longitude
+          };
+          zoom = 13;
+        }
+        
+        // Zillow-inspired dark map style
+        const mapStyle = [
+          { "featureType": "all", "elementType": "geometry", "stylers": [{ "color": "#162238" }] },
+          { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [{ "color": "#0d121a" }, { "weight": 2 }] },
+          { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#e6e7e8" }] },
+          { "featureType": "administrative.country", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
+          { "featureType": "administrative.province", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
+          { "featureType": "administrative.neighborhood", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#1c2a3b" }] },
+          { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#afafaf" }] },
+          { "featureType": "poi", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+          { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#104a55" }] },
+          { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#86c097" }] },
+          { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#253649" }] },
+          { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "color": "#15191c" }] },
+          { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#415d79" }] },
+          { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{ "color": "#19222b" }] },
+          { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "road.arterial", "elementType": "geometry", "stylers": [{ "color": "#2a3a4a" }] },
+          { "featureType": "road.local", "elementType": "geometry", "stylers": [{ "color": "#243344" }] },
+          { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#394665" }] },
+          { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#1e2d3f" }] },
+          { "featureType": "transit", "elementType": "labels.text.fill", "stylers": [{ "color": "#afafaf" }] },
+          { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000f26" }] },
+          { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#89aae4" }] }
+        ];
+        
+        map = new google.maps.Map(mapElement, {
+          center: center,
+          zoom: zoom,
+          styles: mapStyle,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          gestureHandling: 'greedy'
+        });
+        
+        // Create info window for property details
+        const infoWindow = new google.maps.InfoWindow();
+        
+        // Add markers for properties with coordinates
+        propertiesWithCoords.forEach((property, index) => {
+          // Determine marker color based on listing type
+          const markerColor = property.listingType === 'for-rent' ? '#ff9800' : '#4caf50';
+          
+          const marker = new google.maps.Marker({
+            position: { lat: property.latitude, lng: property.longitude },
+            map: map,
+            title: property.address,
+            icon: {
+              path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+              fillColor: markerColor,
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+              scale: 1.2,
+              labelOrigin: new google.maps.Point(0, -30)
+            },
+            label: {
+              text: '$' + (property.price / 1000).toFixed(0) + 'k',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 'bold'
+            }
+          });
+          
+          // Create info window content
+          const contentString = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 8px; max-width: 250px;">' +
+            '<div style="font-weight: 700; font-size: 16px; color: #0066cc; margin-bottom: 4px;">$' + property.price.toLocaleString() + '</div>' +
+            '<div style="font-size: 13px; color: #666; margin-bottom: 8px;">' + property.address + '</div>' +
+            '<div style="font-size: 12px; color: #333;">' + property.bedrooms + ' bd | ' + property.bathrooms + ' ba | ' + property.sqft.toLocaleString() + ' sqft</div>' +
+            '</div>';
+          
+          marker.addListener('click', () => {
+            infoWindow.setContent(contentString);
+            infoWindow.open(map, marker);
+            
+            // Highlight corresponding card in sidebar
+            const cards = document.querySelectorAll('.property-card');
+            cards.forEach(c => c.classList.remove('highlighted'));
+            if (cards[index]) {
+              cards[index].classList.add('highlighted');
+              cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            selectedPropertyIndex = index;
+          });
+          
+          markers.push(marker);
+        });
+        
+        // Fit bounds to show all markers
+        if (markers.length > 1) {
+          const bounds = new google.maps.LatLngBounds();
+          propertiesWithCoords.forEach(property => {
+            bounds.extend({ lat: property.latitude, lng: property.longitude });
+          });
+          map.fitBounds(bounds);
+        }
+      }
+      
+      // Load Google Maps API
+      if (typeof google === 'undefined' || !google.maps) {
+        const script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDtuTAbw4SXbJelngVprsN0hkIB3TFQ8YY&callback=initializeMap';
+        script.async = true;
+        script.defer = true;
+        window.initializeMap = initMap;
+        document.head.appendChild(script);
+      } else {
+        initMap();
+      }
     })();
   </script>
 </body>

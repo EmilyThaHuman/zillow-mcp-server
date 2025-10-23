@@ -9,90 +9,180 @@
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       margin: 0; 
-      padding: 16px; 
+      padding: 0; 
       background: #f8f9fa;
+      height: 100vh;
+      overflow: hidden;
     }
+    
+    .main-container {
+      display: flex;
+      height: 100vh;
+      position: relative;
+    }
+    
+    .sidebar {
+      width: 400px;
+      height: 100%;
+      overflow-y: auto;
+      background: #ffffff;
+      border-right: 1px solid #e0e0e0;
+      padding: 16px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .map-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background: #e5e3df;
+    }
+    
+    #search-map {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
     .header {
       margin-bottom: 20px;
     }
+    
     .location-title {
       font-size: 24px;
       font-weight: 700;
       color: #1a1a1a;
       margin-bottom: 8px;
     }
-    .areas-container { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-      gap: 16px;
+    
+    .areas-list { 
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
+    
     .area-card { 
       border: 1px solid #e0e0e0; 
-      border-radius: 12px; 
-      padding: 20px; 
-      background: white;
+      border-radius: 24px; 
+      padding: 16px; 
+      background: transparent;
       transition: all 0.2s ease;
       cursor: pointer;
     }
+    
     .area-card:hover {
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       transform: translateY(-2px);
+      background: #f5f5f5;
     }
+    
+    .area-card.highlighted {
+      background: #e3f2fd;
+      border-color: #1976d2;
+    }
+    
     .area-name { 
-      font-size: 18px; 
+      font-size: 16px; 
       font-weight: 600; 
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       color: #1a1a1a;
     }
+    
     .area-type {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 2px 8px;
       background: #e3f2fd;
       color: #1976d2;
       border-radius: 12px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
+    
     .area-stats { 
       display: flex; 
-      justify-content: space-between; 
-      margin-top: 16px;
-      padding-top: 16px;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px solid #f0f0f0;
     }
+    
     .stat { 
-      text-align: center;
       flex: 1;
     }
+    
     .stat-value { 
       font-weight: 700; 
       color: #1976d2;
-      font-size: 20px;
-      margin-bottom: 4px;
+      font-size: 16px;
+      margin-bottom: 2px;
     }
+    
     .stat-label {
-      font-size: 12px;
+      font-size: 11px;
       color: #666;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    
     .empty-state {
       text-align: center;
       padding: 40px;
       color: #999;
     }
+    
+    .area-description {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: 50%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .map-container {
+        height: 50%;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="main-container">
+    <div class="sidebar">
+      <div id="root"></div>
+    </div>
+    <div class="map-container">
+      <div id="search-map"></div>
+    </div>
+  </div>
+  
   <script>
     (function() {
       const props = window.__WIDGET_PROPS__ || {};
       const { areas = [], location = 'Search Results', propertyType = 'both' } = props;
       
       const root = document.getElementById('root');
+      let map = null;
+      let markers = [];
+      let selectedAreaIndex = -1;
       
       // Header
       const header = document.createElement('div');
@@ -103,36 +193,69 @@
       `;
       root.appendChild(header);
       
-      // Areas container
+      // Areas list
       const container = document.createElement('div');
-      container.className = 'areas-container';
+      container.className = 'areas-list';
       
       if (areas.length === 0) {
         container.innerHTML = '<div class="empty-state">No areas found. Try adjusting your search criteria.</div>';
       } else {
-        areas.forEach(area => {
+        areas.forEach((area, index) => {
           const card = document.createElement('div');
           card.className = 'area-card';
+          card.dataset.index = index;
           card.innerHTML = `
             <div class="area-type">${area.type || 'neighborhood'}</div>
             <div class="area-name">${area.name}</div>
+            ${area.description ? `<div class="area-description">${area.description}</div>` : ''}
             <div class="area-stats">
-              <div class="stat">
-                <div class="stat-value">${area.propertyCount}</div>
-                <div class="stat-label">Properties</div>
-              </div>
-              <div class="stat">
-                <div class="stat-value">$${Math.round(area.avgPrice / 1000)}k</div>
-                <div class="stat-label">Avg Price</div>
-              </div>
+              ${area.propertyCount ? `
+                <div class="stat">
+                  <div class="stat-value">${area.propertyCount}</div>
+                  <div class="stat-label">For Sale</div>
+                </div>
+              ` : ''}
+              ${area.rentalCount ? `
+                <div class="stat">
+                  <div class="stat-value">${area.rentalCount}</div>
+                  <div class="stat-label">For Rent</div>
+                </div>
+              ` : ''}
+              ${area.avgPrice ? `
+                <div class="stat">
+                  <div class="stat-value">$${Math.round(area.avgPrice / 1000)}k</div>
+                  <div class="stat-label">Avg Price</div>
+                </div>
+              ` : ''}
             </div>
           `;
           
           card.addEventListener('click', () => {
+            // Remove highlight from all cards
+            document.querySelectorAll('.area-card').forEach(c => c.classList.remove('highlighted'));
+            // Add highlight to clicked card
+            card.classList.add('highlighted');
+            selectedAreaIndex = index;
+            
+            // Center map on this area
+            if (map && area.latitude && area.longitude) {
+              map.setCenter({ lat: area.latitude, lng: area.longitude });
+              map.setZoom(13);
+              
+              // Bounce the marker
+              if (markers[index]) {
+                markers[index].setAnimation(google.maps.Animation.BOUNCE);
+                setTimeout(() => {
+                  markers[index].setAnimation(null);
+                }, 750);
+              }
+            }
+            
+            // Post message to parent
             if (window.parent && window.parent.postMessage) {
               window.parent.postMessage({
                 type: 'area-selected',
-                data: { areaName: area.name }
+                data: { areaName: area.name, area: area }
               }, '*');
             }
           });
@@ -142,6 +265,127 @@
       }
       
       root.appendChild(container);
+      
+      // Initialize Google Maps
+      function initMap() {
+        const mapElement = document.getElementById('search-map');
+        
+        if (!mapElement || areas.length === 0) {
+          return;
+        }
+        
+        // Calculate center point from areas with coordinates
+        const areasWithCoords = areas.filter(a => a.latitude && a.longitude);
+        
+        let center = { lat: 37.7749, lng: -122.4194 }; // Default to SF
+        let zoom = 10;
+        
+        if (areasWithCoords.length > 0) {
+          // Use first area's coordinates
+          center = {
+            lat: areasWithCoords[0].latitude,
+            lng: areasWithCoords[0].longitude
+          };
+          zoom = 11;
+        }
+        
+        // Zillow-inspired dark map style
+        const mapStyle = [
+          { "featureType": "all", "elementType": "geometry", "stylers": [{ "color": "#162238" }] },
+          { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [{ "color": "#0d121a" }, { "weight": 2 }] },
+          { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#e6e7e8" }] },
+          { "featureType": "administrative.country", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
+          { "featureType": "administrative.province", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
+          { "featureType": "administrative.neighborhood", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#1c2a3b" }] },
+          { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#afafaf" }] },
+          { "featureType": "poi", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+          { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#104a55" }] },
+          { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#86c097" }] },
+          { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#253649" }] },
+          { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "color": "#15191c" }] },
+          { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#415d79" }] },
+          { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{ "color": "#19222b" }] },
+          { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#cdcdcd" }] },
+          { "featureType": "road.arterial", "elementType": "geometry", "stylers": [{ "color": "#2a3a4a" }] },
+          { "featureType": "road.local", "elementType": "geometry", "stylers": [{ "color": "#243344" }] },
+          { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#394665" }] },
+          { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#1e2d3f" }] },
+          { "featureType": "transit", "elementType": "labels.text.fill", "stylers": [{ "color": "#afafaf" }] },
+          { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000f26" }] },
+          { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#89aae4" }] }
+        ];
+        
+        map = new google.maps.Map(mapElement, {
+          center: center,
+          zoom: zoom,
+          styles: mapStyle,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          gestureHandling: 'greedy'
+        });
+        
+        // Add markers for areas with coordinates
+        areasWithCoords.forEach((area, index) => {
+          const marker = new google.maps.Marker({
+            position: { lat: area.latitude, lng: area.longitude },
+            map: map,
+            title: area.name,
+            label: {
+              text: `${index + 1}`,
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 16,
+              fillColor: '#0066FF',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 3
+            }
+          });
+          
+          marker.addListener('click', () => {
+            // Highlight corresponding card in sidebar
+            const cards = document.querySelectorAll('.area-card');
+            cards.forEach(c => c.classList.remove('highlighted'));
+            if (cards[index]) {
+              cards[index].classList.add('highlighted');
+              cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            selectedAreaIndex = index;
+          });
+          
+          markers.push(marker);
+        });
+        
+        // Fit bounds to show all markers
+        if (markers.length > 1) {
+          const bounds = new google.maps.LatLngBounds();
+          areasWithCoords.forEach(area => {
+            bounds.extend({ lat: area.latitude, lng: area.longitude });
+          });
+          map.fitBounds(bounds);
+        }
+      }
+      
+      // Load Google Maps API
+      if (typeof google === 'undefined' || !google.maps) {
+        const script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDtuTAbw4SXbJelngVprsN0hkIB3TFQ8YY&callback=initializeMap';
+        script.async = true;
+        script.defer = true;
+        window.initializeMap = initMap;
+        document.head.appendChild(script);
+      } else {
+        initMap();
+      }
     })();
   </script>
 </body>
