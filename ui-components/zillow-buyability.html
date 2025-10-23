@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Affordability Calculator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .affordability-container { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      background: white; 
+      border-radius: 16px; 
+      padding: 32px; 
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #0066cc;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .main-result { 
+      text-align: center; 
+      margin-bottom: 32px;
+      padding: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      color: white;
+    }
+    .max-price { 
+      font-size: 56px; 
+      font-weight: 800; 
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .max-price-label {
+      font-size: 14px;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    .monthly-payment { 
+      font-size: 32px; 
+      font-weight: 700;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.3);
+    }
+    .monthly-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+    .breakdown-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+    .breakdown { 
+      display: grid; 
+      gap: 12px;
+    }
+    .breakdown-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 16px; 
+      background: #f8f9fa; 
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .breakdown-item:hover {
+      background: #e9ecef;
+    }
+    .breakdown-label { 
+      font-weight: 500;
+      color: #495057;
+    }
+    .breakdown-value { 
+      font-weight: 700;
+      font-size: 18px;
+      color: #1a1a1a;
+    }
+    .rate-highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+    }
+    .rate-highlight .breakdown-label,
+    .rate-highlight .breakdown-value {
+      color: white;
+    }
+    .disclaimer { 
+      font-size: 11px; 
+      color: #6c757d; 
+      margin-top: 24px; 
+      text-align: center;
+      line-height: 1.6;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .input-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .input-item {
+      text-align: center;
+    }
+    .input-label {
+      font-size: 11px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .input-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    (function() {
+      const props = window.__WIDGET_PROPS__ || {};
+      const { 
+        maxHomePrice = 0, 
+        monthlyPayment = 0, 
+        interestRate = 0, 
+        breakdown = {},
+        annualIncome = 0,
+        downPayment = 0,
+        creditScore = 0,
+        monthlyDebts = 0
+      } = props;
+      
+      const container = document.createElement('div');
+      container.className = 'affordability-container';
+      
+      let html = '<div class="logo">Zillow Home Loans BuyAbility</div>';
+      
+      if (annualIncome || downPayment || creditScore) {
+        html += '<div class="input-summary">';
+        if (annualIncome) {
+          html += '<div class="input-item"><div class="input-label">Annual Income</div><div class="input-value">$' + annualIncome.toLocaleString() + '</div></div>';
+        }
+        if (downPayment) {
+          html += '<div class="input-item"><div class="input-label">Down Payment</div><div class="input-value">$' + downPayment.toLocaleString() + '</div></div>';
+        }
+        if (creditScore) {
+          html += '<div class="input-item"><div class="input-label">Credit Score</div><div class="input-value">' + creditScore + '</div></div>';
+        }
+        if (monthlyDebts) {
+          html += '<div class="input-item"><div class="input-label">Monthly Debts</div><div class="input-value">$' + monthlyDebts.toLocaleString() + '</div></div>';
+        }
+        html += '</div>';
+      }
+      
+      html += '<div class="main-result"><div class="max-price">$' + maxHomePrice.toLocaleString() + '</div><div class="max-price-label">Maximum Home Price</div><div class="monthly-payment">$' + monthlyPayment.toLocaleString() + '/mo</div><div class="monthly-label">Estimated Monthly Payment</div></div>';
+      
+      html += '<div class="breakdown-title">Payment Breakdown</div><div class="breakdown">';
+      html += '<div class="breakdown-item"><span class="breakdown-label">Principal & Interest</span><span class="breakdown-value">$' + (breakdown.principalAndInterest || 0).toLocaleString() + '</span></div>';
+      html += '<div class="breakdown-item"><span class="breakdown-label">Property Tax</span><span class="breakdown-value">$' + (breakdown.propertyTax || 0).toLocaleString() + '</span></div>';
+      html += '<div class="breakdown-item"><span class="breakdown-label">Homeowners Insurance</span><span class="breakdown-value">$' + (breakdown.insurance || 0).toLocaleString() + '</span></div>';
+      html += '<div class="breakdown-item"><span class="breakdown-label">PMI</span><span class="breakdown-value">$' + (breakdown.pmi || 0).toLocaleString() + '</span></div>';
+      html += '<div class="breakdown-item rate-highlight"><span class="breakdown-label">Interest Rate</span><span class="breakdown-value">' + interestRate + '% APR</span></div>';
+      html += '</div>';
+      
+      html += '<div class="disclaimer"><strong>Powered by Zillow Home Loans LLC (NMLS ID#: 10287) BuyAbility tool.</strong><br>This is an estimate based on the information provided and is not a loan approval or commitment to lend. Actual loan terms, rates, and monthly payments may vary based on full financial review and market conditions.</div>';
+      
+      container.innerHTML = html;
+      document.getElementById('root').appendChild(container);
+    })();
+  </script>
+</body>
+</html>
+

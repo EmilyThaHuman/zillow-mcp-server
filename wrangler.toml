@@ -1,0 +1,21 @@
+name = "zillow-mcp-server"
+main = "src/worker.ts"
+compatibility_date = "2024-01-01"
+node_compat = true
+
+[env.production]
+workers_dev = false
+route = "zillow-mcp.yourdomain.workers.dev/*"
+
+[build]
+command = "npm run build"
+
+[[d1_databases]]
+# Optional: if you need to persist state
+# binding = "DB"
+# database_name = "zillow-mcp-db"
+# database_id = "your-database-id"
+
+[vars]
+BASE_URL = "https://zillow-mcp.yourdomain.workers.dev"
+

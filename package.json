@@ -1,0 +1,27 @@
+{
+  "name": "zillow-mcp-server",
+  "version": "2.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Zillow MCP server with real API integration via RapidAPI, deployable on Cloudflare Workers",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "deploy": "wrangler deploy",
+    "dev:worker": "wrangler dev"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^20.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.89.0"
+  }
+}
+
