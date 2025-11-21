@@ -1,0 +1,1 @@
+import{c as e,j as t,R as r}from"./index-DN1ZKjAB.js";import{Z as i}from"./zillow-buyability-SQbZ_Par.js";const o=document.getElementById("root");o&&e.createRoot(o).render(t.jsx(r.StrictMode,{children:t.jsx(i,{})}));

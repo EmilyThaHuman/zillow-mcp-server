@@ -3,6 +3,7 @@
  * 
  * This module provides real estate data from Zillow using RapidAPI.
  * Documentation: https://rapidapi.com/apimaker/api/zillow-com1
+ * API Base URL: https://zillow-com1.p.rapidapi.com
  */
 
 interface ZillowApiConfig {
@@ -21,6 +22,11 @@ interface PropertySearchParams {
   sqftMin?: number;
   sqftMax?: number;
   page?: number;
+  sort?: string;
+}
+
+interface ListingSubType {
+  is_FSBA?: boolean;
 }
 
 interface PropertyDetails {
@@ -31,14 +37,99 @@ interface PropertyDetails {
   bathrooms: number;
   livingArea: number;
   propertyType: string;
-  homeStatus: string;
+  listingStatus?: string;
   imgSrc?: string;
   latitude?: number;
   longitude?: number;
-  listingSubType?: any;
+  listingSubType?: ListingSubType;
+  dateSold?: string | null;
+  daysOnZillow?: number;
+  lotAreaValue?: number;
+  lotAreaUnit?: string;
+  country?: string;
+  currency?: string;
+  hasImage?: boolean;
+  contingentListingType?: string | null;
+  // Legacy fields for backward compatibility
+  homeStatus?: string;
   hdpUrl?: string;
   zestimate?: number;
   rentZestimate?: number;
+}
+
+interface DetailedPropertyInfo {
+  zpid: number;
+  city: string;
+  state: string;
+  homeType: string;
+  homeStatus: string;
+  price: number;
+  bathrooms: number;
+  bedrooms: number;
+  livingArea: number;
+  yearBuilt?: number;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  imgSrc: string;
+  url?: string;
+  address: {
+    city: string;
+    state: string;
+    streetAddress: string;
+    zipcode: string;
+    neighborhood?: string | null;
+  };
+  streetAddress?: string;
+  zipcode?: string;
+  propertyTaxRate?: number;
+  annualHomeownersInsurance?: number;
+  monthlyHoaFee?: number;
+  zestimate?: number | null;
+  rentZestimate?: number;
+  timeOnZillow?: string;
+  pageViewCount?: number;
+  favoriteCount?: number;
+  schools?: Array<{
+    name: string;
+    rating?: number;
+    level: string;
+    type: string;
+    distance?: number;
+    grades?: string;
+  }>;
+  resoFacts?: {
+    hasGarage?: boolean;
+    garageSpaces?: number;
+    parking?: number;
+    yearBuilt?: number;
+    lotSize?: string;
+    pricePerSquareFoot?: number;
+    hoaFee?: string;
+    taxAnnualAmount?: number;
+    [key: string]: any;
+  };
+  mortgageRates?: {
+    arm5Rate?: number;
+    fifteenYearFixedRate?: number;
+    thirtyYearFixedRate?: number;
+  };
+  priceHistory?: Array<any>;
+  taxHistory?: any;
+  nearbyHomes?: Array<{
+    zpid: number;
+    price: number;
+    homeType: string;
+    homeStatus: string;
+    latitude: number;
+    longitude: number;
+    address: {
+      streetAddress: string;
+      city: string;
+      state: string;
+      zipcode: string;
+    };
+  }>;
 }
 
 interface SearchResult {
@@ -61,6 +152,19 @@ interface ZestimateResult {
   valueChange?: number;
 }
 
+interface LocationSuggestion {
+  display?: string;
+  name?: string;
+  regionId?: number;
+  regionType?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface LocationSuggestionsResult {
+  results?: LocationSuggestion[];
+}
+
 export class ZillowApiClient {
   private apiKey: string;
   private apiHost: string;
@@ -74,6 +178,7 @@ export class ZillowApiClient {
 
   /**
    * Makes a request to the Zillow API via RapidAPI
+   * Uses the correct headers format: x-rapidapi-key and x-rapidapi-host
    */
   private async makeRequest<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
     const url = new URL(`${this.baseUrl}${endpoint}`);
@@ -85,19 +190,19 @@ export class ZillowApiClient {
       }
     });
 
-    console.log(`[zillow-api.ts][73] --> Fetching: ${url.toString()}`);
+    console.log(`[zillow-api.ts][88] --> Fetching: ${url.toString()}`);
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': this.apiKey,
-        'X-RapidAPI-Host': this.apiHost,
+        'x-rapidapi-key': this.apiKey,
+        'x-rapidapi-host': this.apiHost,
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[zillow-api.ts][85] --> API Error: ${response.status} - ${errorText}`);
+      console.error(`[zillow-api.ts][100] --> API Error: ${response.status} - ${errorText}`);
       throw new Error(`Zillow API error: ${response.status} ${response.statusText}`);
     }
 
@@ -106,9 +211,17 @@ export class ZillowApiClient {
 
   /**
    * Search for properties by location and filters
+   * Uses the /propertyExtendedSearch endpoint
+   * 
+   * Response includes:
+   * - props: Array of property objects with details
+   * - totalResultCount: Total number of matching properties
+   * - resultsPerPage: Number of results per page
+   * - totalPages: Total number of pages
+   * - currentPage: Current page number
    */
   async searchProperties(params: PropertySearchParams): Promise<SearchResult> {
-    console.log(`[zillow-api.ts][96] --> Searching properties with params:`, params);
+    console.log(`[zillow-api.ts][125] --> Searching properties with params:`, params);
 
     const apiParams: Record<string, any> = {
       location: params.location,
@@ -124,28 +237,41 @@ export class ZillowApiClient {
     if (params.bedsMin) apiParams.bedsMin = params.bedsMin;
     if (params.sqftMin) apiParams.sqftMin = params.sqftMin;
     if (params.sqftMax) apiParams.sqftMax = params.sqftMax;
+    if (params.sort) apiParams.sort = params.sort;
 
     try {
       const result = await this.makeRequest<SearchResult>('/propertyExtendedSearch', apiParams);
-      console.log(`[zillow-api.ts][116] --> Found ${result.totalResultCount} properties`);
+      console.log(`[zillow-api.ts][148] --> Found ${result.totalResultCount} properties`);
       return result;
     } catch (error) {
-      console.error(`[zillow-api.ts][119] --> Search error:`, error);
+      console.error(`[zillow-api.ts][151] --> Search error:`, error);
       throw error;
     }
   }
 
   /**
    * Get property details by Zillow Property ID (zpid)
+   * Uses the /property endpoint
+   * 
+   * Returns comprehensive property information including:
+   * - Basic details (price, beds, baths, sqft, year built)
+   * - Address and location information
+   * - Property description
+   * - Schools nearby with ratings and distances
+   * - HOA fees, property taxes, insurance estimates
+   * - Mortgage rate estimates
+   * - Price and tax history
+   * - Nearby comparable homes
+   * - Detailed RESO facts (garage, parking, lot size, etc.)
    */
-  async getPropertyDetails(zpid: string): Promise<PropertyDetails> {
-    console.log(`[zillow-api.ts][128] --> Getting property details for zpid: ${zpid}`);
+  async getPropertyDetails(zpid: string): Promise<DetailedPropertyInfo> {
+    console.log(`[zillow-api.ts][175] --> Getting property details for zpid: ${zpid}`);
     
     try {
-      const result = await this.makeRequest<PropertyDetails>('/property', { zpid });
+      const result = await this.makeRequest<DetailedPropertyInfo>('/property', { zpid });
       return result;
     } catch (error) {
-      console.error(`[zillow-api.ts][134] --> Property details error:`, error);
+      console.error(`[zillow-api.ts][180] --> Property details error:`, error);
       throw error;
     }
   }
@@ -182,17 +308,77 @@ export class ZillowApiClient {
 
   /**
    * Search for neighborhoods/regions in a location
+   * Uses the /locationSuggestions endpoint
+   * 
+   * Response includes location suggestions with:
+   * - display: Display name
+   * - name: Location name
+   * - regionId: Unique region identifier
+   * - regionType: Type of region (city, neighborhood, etc.)
+   * - latitude/longitude: Geographic coordinates
    */
-  async searchRegions(location: string): Promise<any> {
-    console.log(`[zillow-api.ts][173] --> Searching regions for: ${location}`);
+  async searchLocationSuggestions(location: string): Promise<any> {
+    console.log(`[zillow-api.ts][204] --> Searching location suggestions for: ${location}`);
     
     try {
-      const result = await this.makeRequest<any>('/regionSearch', { location });
+      const result = await this.makeRequest<any>('/locationSuggestions', { location });
+      console.log(`[zillow-api.ts][208] --> Found location suggestions`);
       return result;
     } catch (error) {
-      console.error(`[zillow-api.ts][179] --> Region search error:`, error);
+      console.error(`[zillow-api.ts][211] --> Location suggestions error:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Search for regions (legacy method, calls searchLocationSuggestions)
+   */
+  async searchRegions(location: string): Promise<LocationSuggestionsResult> {
+    const result = await this.searchLocationSuggestions(location);
+    return {
+      results: result.resultGroups?.[0]?.results || []
+    };
+  }
+
+  /**
+   * Search for properties by coordinates
+   * Uses the /propertyByCoordinates endpoint
+   * 
+   * Response includes properties near the given lat/lng coordinates
+   */
+  async searchPropertiesByCoordinates(params: {
+    lat: number;
+    lng: number;
+    status_type?: 'ForSale' | 'ForRent';
+    radius?: number;
+    page?: number;
+  }): Promise<SearchResult> {
+    console.log(`[zillow-api.ts] --> Searching properties by coordinates:`, params);
+    
+    try {
+      const apiParams: Record<string, any> = {
+        lat: params.lat,
+        lng: params.lng,
+        status_type: params.status_type || 'ForSale',
+        page: params.page || 1,
+      };
+      
+      if (params.radius) apiParams.radius = params.radius;
+      
+      const result = await this.makeRequest<SearchResult>('/propertyByCoordinates', apiParams);
+      console.log(`[zillow-api.ts] --> Found ${result.totalResultCount || 0} properties by coordinates`);
+      return result;
+    } catch (error) {
+      console.error(`[zillow-api.ts] --> Property by coordinates error:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Alternative method name for searching properties
+   */
+  async searchPropertiesExtended(params: PropertySearchParams): Promise<SearchResult> {
+    return this.searchProperties(params);
   }
 
   /**
@@ -319,7 +505,7 @@ export class ZillowApiClient {
  */
 export function createZillowApiClient(rapidApiKey: string): ZillowApiClient {
   if (!rapidApiKey) {
-    console.warn(`[zillow-api.ts][318] --> No RapidAPI key provided, API calls will fail`);
+    console.warn(`[zillow-api.ts][360] --> No RapidAPI key provided, API calls will fail`);
   }
   
   return new ZillowApiClient({
@@ -327,4 +513,17 @@ export function createZillowApiClient(rapidApiKey: string): ZillowApiClient {
     rapidApiHost: 'zillow-com1.p.rapidapi.com',
   });
 }
+
+// Export types for external use
+export type { 
+  ZillowApiConfig,
+  PropertySearchParams,
+  PropertyDetails,
+  DetailedPropertyInfo,
+  SearchResult,
+  ZestimateResult,
+  LocationSuggestion,
+  LocationSuggestionsResult,
+  ListingSubType
+};
 

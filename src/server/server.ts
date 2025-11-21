@@ -25,7 +25,7 @@ import {
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { createZillowApiClient, type ZillowApiClient } from "./zillow-api.js";
+import { createZillowApiClient, type ZillowApiClient } from "../zillow-api.js";
 
 type ZillowWidget = {
   id: string;
@@ -38,8 +38,8 @@ type ZillowWidget = {
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const UI_COMPONENTS_DIR = path.resolve(ROOT_DIR, "ui-components");
+const ROOT_DIR = path.resolve(__dirname, "..", "..");
+const ASSETS_DIR = path.resolve(ROOT_DIR, "assets");
 
 // Get RapidAPI key from environment
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
@@ -56,20 +56,45 @@ if (RAPIDAPI_KEY) {
 }
 
 function readWidgetHtml(componentName: string): string {
-  if (!fs.existsSync(UI_COMPONENTS_DIR)) {
-    console.warn(`Widget components directory not found at ${UI_COMPONENTS_DIR}`);
-    // Return a simple fallback HTML
-    return `<!DOCTYPE html><html><body><div id="root">Widget: ${componentName}</div></body></html>`;
+  if (!fs.existsSync(ASSETS_DIR)) {
+    throw new Error(
+      `Widget assets not found. Expected directory ${ASSETS_DIR}. Run "npm run build" before starting the server.`
+    );
   }
 
-  const htmlPath = path.join(UI_COMPONENTS_DIR, `${componentName}.html`);
-  
-  if (fs.existsSync(htmlPath)) {
-    return fs.readFileSync(htmlPath, "utf8");
+  // Try direct path first
+  const directPath = path.join(ASSETS_DIR, `${componentName}.html`);
+  let htmlContents: string | null = null;
+
+  if (fs.existsSync(directPath)) {
+    htmlContents = fs.readFileSync(directPath, "utf8");
   } else {
-    console.warn(`Widget HTML for "${componentName}" not found`);
-    return `<!DOCTYPE html><html><body><div id="root">Widget: ${componentName}</div></body></html>`;
+    // Check for versioned files like "component-hash.html"
+    const candidates = fs
+      .readdirSync(ASSETS_DIR)
+      .filter(
+        (file) => file.startsWith(`${componentName}-`) && file.endsWith(".html")
+      )
+      .sort();
+    const fallback = candidates[candidates.length - 1];
+    if (fallback) {
+      htmlContents = fs.readFileSync(path.join(ASSETS_DIR, fallback), "utf8");
+    } else {
+      // Check in src/components subdirectory as fallback
+      const nestedPath = path.join(ASSETS_DIR, "src", "components", `${componentName}.html`);
+      if (fs.existsSync(nestedPath)) {
+        htmlContents = fs.readFileSync(nestedPath, "utf8");
+      }
+    }
   }
+
+  if (!htmlContents) {
+    throw new Error(
+      `Widget HTML for "${componentName}" not found in ${ASSETS_DIR}. Run "npm run build" to generate the assets.`
+    );
+  }
+
+  return htmlContents;
 }
 
 function widgetMeta(widget: ZillowWidget) {
@@ -415,67 +440,104 @@ function createZillowServer(): Server {
 
           try {
             if (zillowApi) {
-              // Use real API
-              const regionResults = await zillowApi.searchRegions(args.location);
+              // Step 1: Get location suggestions with coordinates
+              const locationResults = await zillowApi.searchLocationSuggestions(args.location);
               
-              // Search for properties to get counts
-              const forSaleSearch = args.propertyType !== 'for-rent' 
-                ? await zillowApi.searchProperties({
-                    location: args.location,
-                    status_type: 'ForSale',
-                    page: 1,
-                  })
-                : null;
-
-              const forRentSearch = args.propertyType !== 'for-sale'
-                ? await zillowApi.searchProperties({
-                    location: args.location,
-                    status_type: 'ForRent',
-                    page: 1,
-                  })
-                : null;
-
-              const areas = [];
+              const areas: any[] = [];
+              const featuredProperties: any[] = [];
               
-              // Build areas list from region results
-              if (regionResults && regionResults.results) {
-                for (const region of regionResults.results.slice(0, 5)) {
+              // Step 2: For each location, get property counts using coordinates
+              if (locationResults?.resultGroups?.[0]?.results) {
+                const locations = locationResults.resultGroups[0].results.slice(0, 5);
+                
+                for (const location of locations) {
+                  const lat = location.metaData?.lat;
+                  const lng = location.metaData?.lng;
+                  
+                  let propertyCount = 0;
+                  let rentalCount = 0;
+                  
+                  // Get property counts for this specific area using coordinates
+                  if (lat && lng) {
+                    try {
+                      // Search for sale properties
+                      if (args.propertyType === 'for-sale' || args.propertyType === 'both' || !args.propertyType) {
+                        const saleResults = await zillowApi.searchPropertiesByCoordinates({
+                          lat,
+                          lng,
+                          status_type: 'ForSale',
+                          page: 1,
+                        });
+                        propertyCount = saleResults?.totalResultCount || 0;
+                        
+                        // Add some properties from this area to featured properties
+                        if (saleResults?.props && featuredProperties.length < 8) {
+                          const propsToAdd = saleResults.props.slice(0, 2);
+                          propsToAdd.forEach((prop: any) => {
+                            if (featuredProperties.length < 8) {
+                              featuredProperties.push({
+                                id: prop.zpid || String(Math.random()),
+                                address: prop.address || location.display,
+                                price: propertyCount || 0,
+                                subtitle: prop.listingStatus || 'For Sale',
+                                description: `${prop.propertyType || 'Property'} - ${prop.bedrooms || 0} bed, ${prop.bathrooms || 0} bath`,
+                                imageUrl: prop.imgSrc,
+                                latitude: prop.latitude,
+                                longitude: prop.longitude,
+                                bedrooms: prop.bedrooms,
+                                bathrooms: prop.bathrooms,
+                                sqft: prop.livingArea,
+                                propertyType: prop.propertyType,
+                              });
+                            }
+                          });
+                        }
+                      }
+                      
+                      // Search for rent properties
+                      if (args.propertyType === 'for-rent' || args.propertyType === 'both') {
+                        const rentResults = await zillowApi.searchPropertiesByCoordinates({
+                          lat,
+                          lng,
+                          status_type: 'ForRent',
+                          page: 1,
+                        });
+                        rentalCount = rentResults?.totalResultCount || 0;
+                      }
+                    } catch (coordError) {
+                      console.error(`[server.ts] --> Error fetching properties for coordinates ${lat},${lng}:`, coordError);
+                    }
+                  }
+                  
                   areas.push({
-                    name: region.display || region.name || `${args.location} - ${region.regionType}`,
-                    propertyCount: forSaleSearch?.totalResultCount || 0,
-                    rentalCount: forRentSearch?.totalResultCount || 0,
-                    avgPrice: forSaleSearch?.props?.[0]?.price || 0,
-                    type: region.regionType || 'neighborhood',
-                    regionId: region.regionId,
+                    name: location.display || location.name || args.location,
+                    propertyCount,
+                    rentalCount,
+                    avgPrice: 0, // We don't calculate avg price in this version
+                    type: location.metaData?.regionType || 'neighborhood',
+                    latitude: lat,
+                    longitude: lng,
+                    description: `${location.display || location.name} - ${propertyCount} homes for sale${rentalCount > 0 ? `, ${rentalCount} for rent` : ''}`,
                   });
                 }
               }
 
-              // If no regions found, use search results
-              if (areas.length === 0 && (forSaleSearch || forRentSearch)) {
-                areas.push({
-                  name: args.location,
-                  propertyCount: forSaleSearch?.totalResultCount || 0,
-                  rentalCount: forRentSearch?.totalResultCount || 0,
-                  avgPrice: forSaleSearch?.props?.[0]?.price || 0,
-                  type: 'city',
-                });
-              }
+              const totalResults = areas.reduce((sum, area) => sum + (area.propertyCount || 0), 0);
 
               return {
                 content: [
                   {
                     type: "text",
-                    text: `Found ${areas.length} areas in ${args.location}. Total properties: ${forSaleSearch?.totalResultCount || 0} for sale, ${forRentSearch?.totalResultCount || 0} for rent.`,
+                    text: `Found ${areas.length} areas in ${args.location} with ${totalResults} properties available.`,
                   },
                 ],
                 structuredContent: {
                   location: args.location,
                   propertyType: args.propertyType || "both",
                   areas: areas,
+                  featuredProperties: featuredProperties,
                   filters: args.filters,
-                  totalForSale: forSaleSearch?.totalResultCount || 0,
-                  totalForRent: forRentSearch?.totalResultCount || 0,
+                  totalResults,
                 },
                 _meta: widgetMeta(widget),
               };
@@ -488,6 +550,8 @@ function createZillowServer(): Server {
                   rentalCount: 32,
                   avgPrice: 450000,
                   type: "neighborhood",
+                  latitude: 47.6062,
+                  longitude: -122.3321,
                 },
                 {
                   name: `${args.location} - Suburbs`,
@@ -495,6 +559,31 @@ function createZillowServer(): Server {
                   rentalCount: 85,
                   avgPrice: 350000,
                   type: "neighborhood",
+                  latitude: 47.6205,
+                  longitude: -122.3209,
+                },
+              ];
+
+              const mockFeaturedProperties = [
+                {
+                  id: '1',
+                  address: 'Capitol Hill, WA',
+                  price: 45,
+                  subtitle: 'Urban living',
+                  description: 'Vibrant neighborhood with great nightlife',
+                  imageUrl: 'https://photos.zillowstatic.com/fp/d6025c6891ff0e4f6c3b1b5e1eac3f09-cc_ft_768.webp',
+                  latitude: 47.6205,
+                  longitude: -122.3209,
+                },
+                {
+                  id: '2',
+                  address: 'Queen Anne, WA',
+                  price: 32,
+                  subtitle: 'Hilltop views',
+                  description: 'Stunning views of the city and mountains',
+                  imageUrl: 'https://photos.zillowstatic.com/fp/3c4e2d3c1b8f7e9a5c6d8e2f3a4b5c6d-cc_ft_768.webp',
+                  latitude: 47.6369,
+                  longitude: -122.3573,
                 },
               ];
 
@@ -509,6 +598,7 @@ function createZillowServer(): Server {
                   location: args.location,
                   propertyType: args.propertyType || "both",
                   areas: mockAreas,
+                  featuredProperties: mockFeaturedProperties,
                   filters: args.filters,
                   usingMockData: true,
                 },
@@ -545,6 +635,21 @@ function createZillowServer(): Server {
                 monthlyDebts: args.monthlyDebts || 500,
               });
 
+              // Get location coordinates if location is provided
+              let latitude, longitude;
+              if (args.location) {
+                try {
+                  const locationResults = await zillowApi.searchLocationSuggestions(args.location);
+                  if (locationResults?.resultGroups?.[0]?.results?.[0]) {
+                    const firstResult = locationResults.resultGroups[0].results[0];
+                    latitude = firstResult.metaData?.lat;
+                    longitude = firstResult.metaData?.lng;
+                  }
+                } catch (locError) {
+                  console.error('[server.ts] --> Error fetching location coordinates:', locError);
+                }
+              }
+
               return {
                 content: [
                   {
@@ -555,6 +660,8 @@ function createZillowServer(): Server {
                 structuredContent: {
                   ...result,
                   location: args.location || "United States",
+                  latitude,
+                  longitude,
                 },
                 _meta: widgetMeta(widget),
               };
@@ -578,6 +685,8 @@ function createZillowServer(): Server {
                   creditScore: args.creditScore || 720,
                   monthlyDebts: args.monthlyDebts || 500,
                   location: args.location || "United States",
+                  latitude: 47.6062,
+                  longitude: -122.3321,
                   maxHomePrice: maxHomePrice,
                   monthlyPayment: monthlyPayment,
                   interestRate: 6.5,
@@ -715,18 +824,21 @@ function createZillowServer(): Server {
               // Transform properties to match expected format
               const properties = searchResult.props?.slice(0, 10).map((prop: any) => ({
                 id: prop.zpid,
-                address: prop.address || `${prop.streetAddress}, ${prop.city}, ${prop.state} ${prop.zipcode}`,
-                price: prop.price || prop.unformattedPrice,
+                address: prop.address,
+                price: prop.price,
                 bedrooms: prop.bedrooms,
                 bathrooms: prop.bathrooms,
                 sqft: prop.livingArea,
-                propertyType: prop.propertyType || prop.homeType,
-                imageUrl: prop.imgSrc || prop.carouselPhotos?.[0]?.url,
+                propertyType: prop.propertyType,
+                imageUrl: prop.imgSrc,
                 listingType: args.listingType || 'for-sale',
-                zestimate: prop.zestimate,
-                hdpUrl: prop.hdpUrl,
+                listingStatus: prop.listingStatus,
+                daysOnZillow: prop.daysOnZillow,
                 latitude: prop.latitude,
                 longitude: prop.longitude,
+                lotAreaValue: prop.lotAreaValue,
+                lotAreaUnit: prop.lotAreaUnit,
+                hasImage: prop.hasImage,
               })) || [];
 
               return {
