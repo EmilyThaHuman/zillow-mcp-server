@@ -1045,6 +1045,46 @@ const httpServer = createServer(
       return;
     }
 
+    // Serve static assets for widgets
+    if (req.method === "GET") {
+      // Remove leading slash from pathname
+      const assetPath = url.pathname.slice(1);
+      const fullPath = path.join(ASSETS_DIR, assetPath);
+
+      // Security check: ensure the path is within ASSETS_DIR
+      const resolvedPath = path.resolve(fullPath);
+      if (!resolvedPath.startsWith(path.resolve(ASSETS_DIR))) {
+        res.writeHead(403).end("Forbidden");
+        return;
+      }
+
+      if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+        const ext = path.extname(resolvedPath).toLowerCase();
+        const contentTypes: { [key: string]: string } = {
+          ".html": "text/html",
+          ".js": "application/javascript",
+          ".css": "text/css",
+          ".json": "application/json",
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".jpeg": "image/jpeg",
+          ".gif": "image/gif",
+          ".svg": "image/svg+xml",
+          ".ico": "image/x-icon",
+        };
+
+        const contentType = contentTypes[ext] || "application/octet-stream";
+        
+        res.writeHead(200, {
+          "Content-Type": contentType,
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=3600",
+        });
+        fs.createReadStream(resolvedPath).pipe(res);
+        return;
+      }
+    }
+
     res.writeHead(404).end("Not Found");
   }
 );
