@@ -4,10 +4,11 @@ export default {
   content: [
     './src/**/*.{js,jsx,ts,tsx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        expedia: {
+        zillow: {
           blue: '#0066cc',
           darkblue: '#003b95',
         }
