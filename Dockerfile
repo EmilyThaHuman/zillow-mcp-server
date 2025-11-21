@@ -18,7 +18,6 @@ RUN npm ci
 # Copy source code and UI components
 COPY src ./src
 COPY ui-components ./ui-components
-COPY scripts ./scripts
 
 # Build the widgets (Vite) and server (TypeScript)
 # This creates the assets/ directory with built HTML/JS/CSS
