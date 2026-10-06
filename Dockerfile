@@ -15,9 +15,8 @@ COPY tailwind.config.ts ./
 # Install dependencies
 RUN npm ci
 
-# Copy source code and UI components
+# Copy source code
 COPY src ./src
-COPY ui-components ./ui-components
 
 # Build the widgets (Vite) and server (TypeScript)
 # This creates the assets/ directory with built HTML/JS/CSS

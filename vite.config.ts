@@ -35,6 +35,10 @@ export default defineConfig({
   server: {
     port: 5173,
     open: '/src/dev/preview.html',
+  },
+  define: {
+    // Require GOOGLE_MAPS_API_KEY at build time; no hardcoded fallback (security).
+    'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(process.env.GOOGLE_MAPS_API_KEY ?? '')
   }
 });
 

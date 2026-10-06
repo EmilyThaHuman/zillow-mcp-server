@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["@cloudflare/workers-types", "node"],
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -157,7 +157,8 @@ const ZillowPropertySearch: React.FC<Partial<Props>> = (externalProps) => {
 
     if (typeof window.google === 'undefined' || !window.google.maps) {
       const script = document.createElement('script');
-      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAMH3mSJD1zFkeUW0jhHFc9YUiBO5vHs8Y';
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
       script.async = true;
       script.defer = true;
       script.onload = initMap;
